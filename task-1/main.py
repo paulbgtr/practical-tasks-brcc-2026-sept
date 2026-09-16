@@ -30,19 +30,32 @@ def get_data(id):
     return df
 
 
-def main():
-    activations = get_data("activations_afrr")
-    imbalance_volumes = get_data("imbalance_volumes_v2")
+def format_tables(df_afrr_raw, df_imbalance_raw):
+    df_afrr = df_afrr_raw.rename(columns={"datetime_from": "timestamp"})[
+        ["timestamp", "area", "Upward", "Downward"]
+    ].copy()
 
-    activations = activations[['datetime_from', 'area', 'Upward', 'Downward']]
-    imbalance_volumes = imbalance_volumes.rename(columns={"Unnamed: 3": "value"})
-    imbalance_volumes = imbalance_volumes[['datetime_from', 'area', 'value']]
+    df_imbalance = df_imbalance_raw.rename(
+        columns={"Unnamed: 3": "value", "datetime_from": "timestamp"}
+    )[["timestamp", "area", "value"]].copy()
+
+    df_afrr["timestamp"] = pd.to_datetime(df_afrr["timestamp"])
+    df_imbalance["timestamp"] = pd.to_datetime(df_imbalance["timestamp"])
+
+    return df_afrr, df_imbalance
+
+
+def main():
+    df_afrr_raw = get_data("activations_afrr")
+    df_imbalance_raw = get_data("imbalance_volumes_v2")
+
+    df_afrr, df_imbalance = format_tables(df_afrr_raw, df_imbalance_raw)
 
     result = pd.merge(
-        activations,
-        imbalance_volumes,
-        on=["datetime_from", "area"],
-        how="left",
+        df_afrr,
+        df_imbalance,
+        on=["timestamp", "area"],
+        how="inner",
     )
 
     print(result)
