@@ -1,5 +1,6 @@
 from io import StringIO
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 
@@ -20,7 +21,11 @@ def get_data(id):
 
     data = StringIO(res.text)
 
-    df = pd.read_csv(data, sep=";")
+    df = pd.read_csv(
+        data,
+        sep=";",
+        decimal=",",
+    )
 
     return df
 
@@ -29,8 +34,18 @@ def main():
     activations = get_data("activations_afrr")
     imbalance_volumes = get_data("imbalance_volumes_v2")
 
-    print(activations)
-    print(imbalance_volumes)
+    activations = activations[['datetime_from', 'area', 'Upward', 'Downward']]
+    imbalance_volumes = imbalance_volumes.rename(columns={"Unnamed: 3": "value"})
+    imbalance_volumes = imbalance_volumes[['datetime_from', 'area', 'value']]
+
+    result = pd.merge(
+        activations,
+        imbalance_volumes,
+        on=["datetime_from", "area"],
+        how="left",
+    )
+
+    print(result)
 
 
 if __name__ == "__main__":
