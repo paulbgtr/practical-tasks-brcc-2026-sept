@@ -45,10 +45,19 @@ def format_tables(df_afrr_raw, df_imbalance_raw):
     return df_afrr, df_imbalance
 
 
+def print_summary(df):
+    summary = df.groupby("area").agg(
+        total_imbalance=("value", lambda x: x.abs().sum()),
+        total_activation=("net_afrr", lambda x: x.abs().sum()),
+    )
+    summary["coverage_pct"] = (
+        summary["total_activation"] / summary["total_imbalance"] * 100
+    ).round(1)
+    print(summary.round(2))
+
+
 def plot_area(ax_raw, ax_derived, df, area):
     d = df[df["area"] == area].sort_values("timestamp")
-    d["net_afrr"] = d["Downward"] - d["Upward"]
-    d["residual"] = d["value"] - d["net_afrr"]
 
     ax_raw.plot(d["timestamp"], d["value"], label="Imbalance", color="black")
     ax_raw.plot(d["timestamp"], d["Upward"], label="aFRR Upward", color="green")
@@ -68,6 +77,12 @@ def plot_area(ax_raw, ax_derived, df, area):
     ax_derived.legend(loc="upper right", fontsize=8)
 
 
+def plug_metrics(df):
+    df["net_afrr"] = df["Downward"] - df["Upward"]
+    df["residual"] = df["value"] - df["net_afrr"]
+    df["residual_ratio"] = df["residual"] / df["value"].replace(0, pd.NA)
+    return df
+
 def main():
     df_afrr_raw = get_data("activations_afrr")
     df_imbalance_raw = get_data("imbalance_volumes_v2")
@@ -80,6 +95,9 @@ def main():
         on=["timestamp", "area"],
         how="inner",
     )
+
+    result = plug_metrics(result)
+    print_summary(result)
 
     areas = sorted(result["area"].unique())
 
