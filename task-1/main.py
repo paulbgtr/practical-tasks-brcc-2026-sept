@@ -45,6 +45,29 @@ def format_tables(df_afrr_raw, df_imbalance_raw):
     return df_afrr, df_imbalance
 
 
+def plot_area(ax_raw, ax_derived, df, area):
+    d = df[df["area"] == area].sort_values("timestamp")
+    d["net_afrr"] = d["Downward"] - d["Upward"]
+    d["residual"] = d["value"] - d["net_afrr"]
+
+    ax_raw.plot(d["timestamp"], d["value"], label="Imbalance", color="black")
+    ax_raw.plot(d["timestamp"], d["Upward"], label="aFRR Upward", color="green")
+    ax_raw.plot(d["timestamp"], d["Downward"], label="aFRR Downward", color="red")
+    ax_raw.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    ax_raw.set_title(f"{area} — raw")
+    ax_raw.legend(loc="upper right", fontsize=8)
+
+    ax_derived.plot(
+        d["timestamp"], d["net_afrr"], label="Net aFRR (Down-Up)", color="blue"
+    )
+    ax_derived.plot(
+        d["timestamp"], d["residual"], label="Residual", color="purple", linestyle=":"
+    )
+    ax_derived.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    ax_derived.set_title(f"{area} — derived")
+    ax_derived.legend(loc="upper right", fontsize=8)
+
+
 def main():
     df_afrr_raw = get_data("activations_afrr")
     df_imbalance_raw = get_data("imbalance_volumes_v2")
@@ -58,7 +81,21 @@ def main():
         how="inner",
     )
 
-    print(result)
+    areas = sorted(result["area"].unique())
+
+    fig, axes = plt.subplots(
+        nrows=len(areas),
+        ncols=2,
+        figsize=(16, 4 * len(areas)),
+        sharex=True,
+    )
+
+    for row, area in zip(axes, areas):
+        ax_raw, ax_derived = row
+        plot_area(ax_raw, ax_derived, result, area)
+
+    fig.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
