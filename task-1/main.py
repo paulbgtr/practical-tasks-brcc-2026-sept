@@ -5,6 +5,8 @@ import pandas as pd
 import requests
 
 API = "https://api-baltic.transparency-dashboard.eu/api/v1/export"
+START_DATE = "2025-09-22T00:00"
+END_DATE = "2025-09-23T00:00"
 
 
 def get_data(id):
@@ -12,8 +14,8 @@ def get_data(id):
         API,
         params={
             "id": id,
-            "start_date": "2025-09-22T00:00",
-            "end_date": "2025-09-23T00:00",
+            "start_date": START_DATE,
+            "end_date": END_DATE,
             "output_time_zone": "EET",
             "output_format": "csv",
         },
@@ -35,8 +37,11 @@ def format_tables(df_afrr_raw, df_imbalance_raw):
         ["timestamp", "area", "Upward", "Downward"]
     ].copy()
 
+    unnamed_cols = [c for c in df_imbalance_raw.columns if c.startswith("Unnamed")]
+    assert len(unnamed_cols) == 1, f"Expected 1 unnamed column, got {unnamed_cols}"
+
     df_imbalance = df_imbalance_raw.rename(
-        columns={"Unnamed: 3": "value", "datetime_from": "timestamp"}
+        columns={unnamed_cols[0]: "value", "datetime_from": "timestamp"}
     )[["timestamp", "area", "value"]].copy()
 
     df_afrr["timestamp"] = pd.to_datetime(df_afrr["timestamp"])
@@ -49,11 +54,19 @@ def print_summary(df):
     summary = df.groupby("area").agg(
         total_imbalance=("value", lambda x: x.abs().sum()),
         total_activation=("net_afrr", lambda x: x.abs().sum()),
+        direction_accuracy=("direction_ok", "mean"),
+        no_reaction_pct=("no_reaction", "mean"),
+        median_residual_ratio=("residual_ratio", lambda x: x.abs().median()),
+        avg_residual_ratio=("residual_ratio", lambda x: x.abs().mean()),
     )
     summary["coverage_pct"] = (
         summary["total_activation"] / summary["total_imbalance"] * 100
     ).round(1)
+    summary["direction_accuracy"] = (summary["direction_accuracy"] * 100).round(1)
+    summary["no_reaction_pct"] = (summary["no_reaction_pct"] * 100).round(1)
+    summary["avg_residual_ratio"] = summary["avg_residual_ratio"].round(2)
     print(summary.round(2))
+    summary.round(2).to_csv("summary.csv")
 
 
 def plot_area(ax_raw, ax_derived, df, area):
@@ -81,7 +94,10 @@ def plug_metrics(df):
     df["net_afrr"] = df["Downward"] - df["Upward"]
     df["residual"] = df["value"] - df["net_afrr"]
     df["residual_ratio"] = df["residual"] / df["value"].replace(0, pd.NA)
+    df["no_reaction"] = (df["net_afrr"] == 0) & (df["value"] != 0)
+    df["direction_ok"] = (df["value"] * df["net_afrr"]) >= 0
     return df
+
 
 def main():
     df_afrr_raw = get_data("activations_afrr")
@@ -113,7 +129,7 @@ def main():
         plot_area(ax_raw, ax_derived, result, area)
 
     fig.tight_layout()
-    plt.show()
+    fig.savefig("aFRR_vs_imbalance_20250922.png", dpi=150, bbox_inches="tight")
 
 
 if __name__ == "__main__":
