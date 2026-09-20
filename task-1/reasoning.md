@@ -10,6 +10,7 @@ aFRR (automatic Frequency Restoration Reserve) is an automatically activated res
 - `direction_accuracy`: % of intervals where aFRR activation direction (Downward for surplus, Upward for deficit) matched the imbalance sign.
 - `no_reaction_pct`: % of imbalanced intervals with zero aFRR activation.
 - `avg_residual_ratio`: average of `|residual|/|value|`, showing typical leftover imbalance as a fraction of the counterfactual imbalance, per-interval rather than aggregated.
+- `median_residual_ratio`: the median (rather than mean) of the same per-interval ratio - less sensitive to intervals where `value` is near zero, which can inflate the mean disproportionately.
 
 **Important**: `imbalance_volumes_v2` is explicitly defined as the counterfactual area control error "as it would have been if power balancing was not performed", not the actual residual imbalance after TSOs acted. So `coverage_pct` here doesn't mean "% of the real imbalance that was fixed", it means "how large aFRR activation was relative to the imbalance that would have existed with no balancing at all."
 A low `coverage_pct` doesn't necessarily mean poor performance, it can also mean other reserves (FCR, mFRR, cross-border exchange) absorbed part of that counterfactual imbalance instead of aFRR alone.
