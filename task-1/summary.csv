@@ -1,0 +1,4 @@
+area,total_imbalance,total_activation,direction_accuracy,no_reaction_pct,median_residual_ratio,avg_residual_ratio,coverage_pct
+Estonia,1766.07,267.39,55.2,0.0,0.97,1.59,15.1
+Latvia,594.96,320.78,80.2,0.0,0.96,2.38,53.9
+Lithuania,1614.8,241.89,56.2,3.1,1.0,1.6,15.0
