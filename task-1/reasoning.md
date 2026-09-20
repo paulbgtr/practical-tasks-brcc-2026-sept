@@ -46,6 +46,8 @@ The residual plots support the numbers above. For Estonia and Lithuania, the lar
 
 Latvia's `net_afrr` visibly tracks the shape of its imbalance curve more closely throughout the day, consistent with its higher `direction_accuracy` - the two curves move together rather than one being flat while the other swings. It still shows one sharp residual spike (~06:00), which is the likely driver of its higher mean residual ratio despite the otherwise closer tracking.
 
+![graph](https://github.com/paulbgtr/practical-tasks-brcc-2026-sept/blob/main/task-1/aFRR_vs_imbalance_20250922.png?raw=true)
+
 ## Limitations
 
 This is a single-day snapshot (22.09.2025), the imbalance metric is a counterfactual rather than the actual post-balancing residual, and Latvia's much smaller imbalance base makes its volume-based metrics (coverage_pct, avg_residual_ratio) less directly comparable to Estonia's and Lithuania's. A more robust assessment would use several days of data and, ideally, the actual net regulation state rather than the counterfactual imbalance series.
